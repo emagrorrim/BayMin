@@ -1,8 +1,4 @@
 //
-//  MainViewController.m
-//  HeartBeats
-//
-//  Created by Christian Roman on 30/08/13.
 //  Copyright (c) 2013 Christian Roman. All rights reserved.
 //
 
@@ -62,6 +58,7 @@
     [device setTorchMode:AVCaptureTorchModeOn];
     [device unlockForConfiguration];
   }
+  [device setActiveVideoMinFrameDuration:CMTimeMake(1, 10)];
   
   // Create a AVCaptureDeviceInput with the camera device
   NSError *error = nil;
@@ -88,7 +85,6 @@
     [session addOutput:videoDataOutput];
   }
   AVCaptureConnection* connection = [videoDataOutput connectionWithMediaType:AVMediaTypeVideo];
-  [connection setVideoMinFrameDuration:CMTimeMake(1, 10)];
   [connection setVideoOrientation:AVCaptureVideoOrientationPortrait];
 }
 
@@ -203,7 +199,6 @@
     CGContextAddLineToPoint(context, xpos, bounds.size.height / 2 + ypos * bounds.size.height / 2);
   }
   CGContextStrokePath(context);
-  
   CGContextRestoreGState(context);
 }
 
