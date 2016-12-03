@@ -6,4 +6,6 @@
 
 @interface NetworkService : NSObject
 
++ (NetworkService *)sharedService;
+
 @end
