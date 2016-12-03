@@ -3,14 +3,15 @@
 //
 
 #import "MainViewController.h"
+#import "HSVUtils.h"
 
-@interface MainViewController ()
-{
-  AVCaptureSession *session;
+@interface MainViewController () {
   CALayer* imageLayer;
-  NSMutableArray *points;
-  NSMutableArray *datas;
 }
+
+@property (nonatomic, strong) AVCaptureSession *session;
+@property (nonatomic, strong) NSMutableArray *points;
+@property (nonatomic, strong) NSMutableArray *beats;
 
 @property (nonatomic, assign) BOOL hasStartedRecording;
 
@@ -18,91 +19,34 @@
 
 @implementation MainViewController
 
-- (void)viewDidLoad
-{
+- (void)viewDidLoad {
   [super viewDidLoad];
   
+  [self setupImageLayer];
+  [self startAVCapture];
+}
+
+- (void)setupImageLayer {
   imageLayer = [CALayer layer];
   imageLayer.frame = self.view.layer.bounds;
   imageLayer.contentsGravity = kCAGravityResizeAspectFill;
   [self.view.layer addSublayer:imageLayer];
-  
-  [self setupAVCapture];
 }
 
 - (void)viewWillDisappear:(BOOL)animated {
   [self stopAVCapture];
 }
 
-- (void)setupAVCapture
-{
-  // Create the AVCapture Session
-  session = [AVCaptureSession new];
-  [self configureSessionWithBlock:^() {
-    [self configureSession];
-  }];
-  [session startRunning];
+- (void)startAVCapture {
+  [self.session startRunning];
 }
 
-- (void)configureSessionWithBlock:(void (^)(void))configureBlock {
-  [session beginConfiguration];
-  configureBlock();
-  [session commitConfiguration];
-}
-
-- (void)configureSession {
-  // Get the default camera device
-  AVCaptureDevice *device = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
-  if([device isTorchModeSupported:AVCaptureTorchModeOn]) {
-    [device lockForConfiguration:nil];
-    [device setTorchMode:AVCaptureTorchModeOn];
-    [device unlockForConfiguration];
-  }
-  [device setActiveVideoMinFrameDuration:CMTimeMake(1, 10)];
-  
-  // Create a AVCaptureDeviceInput with the camera device
-  NSError *error = nil;
-  AVCaptureDeviceInput *deviceInput = [AVCaptureDeviceInput deviceInputWithDevice:device error:&error];
-  if (error) {
-    [self showErrorAlert:error];
-  }
-  
-  if ([session canAddInput:deviceInput]) {
-    [session addInput:deviceInput];
-  }
-  
-  // AVCaptureVideoDataOutput
-  
-  AVCaptureVideoDataOutput *videoDataOutput = [AVCaptureVideoDataOutput new];
-  NSDictionary *rgbOutputSettings = [NSDictionary dictionaryWithObject:
-                                     [NSNumber numberWithInt:kCMPixelFormat_32BGRA] forKey:(id)kCVPixelBufferPixelFormatTypeKey];
-  [videoDataOutput setVideoSettings:rgbOutputSettings];
-  [videoDataOutput setAlwaysDiscardsLateVideoFrames:YES];
-  dispatch_queue_t videoDataOutputQueue = dispatch_queue_create("VideoDataOutputQueue", DISPATCH_QUEUE_SERIAL);
-  [videoDataOutput setSampleBufferDelegate:self queue:videoDataOutputQueue];
-  
-  if ([session canAddOutput:videoDataOutput]) {
-    [session addOutput:videoDataOutput];
-  }
-  AVCaptureConnection* connection = [videoDataOutput connectionWithMediaType:AVMediaTypeVideo];
-  [connection setVideoOrientation:AVCaptureVideoOrientationPortrait];
-}
-
-- (void)showErrorAlert: (NSError *)error {
-  UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:[NSString stringWithFormat:@"Error %d", (int)[error code]]
-                                                        message:[error localizedDescription]
-                                                       delegate:nil
-                                              cancelButtonTitle:@"OK"
-                                              otherButtonTitles:nil];
-  [alertView show];
-  return;
-}
 
 - (void)stopAVCapture
 {
-  [session stopRunning];
-  session = nil;
-  points = nil;
+  [self.session stopRunning];
+  _session = nil;
+  _points = nil;
 }
 
 #pragma mark - AVCaptureVideoDataOutputSampleBufferDelegate
@@ -119,29 +63,8 @@
   CGContextRef context = CGBitmapContextCreate(baseAddress, width, height, 8,
                                                bytesPerRow, colorSpace, kCGBitmapByteOrder32Little | kCGImageAlphaPremultipliedFirst);
   
-  float r = 0, g = 0,b = 0;
-  for(int y = 0; y < height; y++) {
-    for(int x = 0; x < width * 4; x += 4) {
-      b += buf[x];
-      g += buf[x+1];
-      r += buf[x+2];
-    }
-    buf += bytesPerRow;
-  }
-  r /= 255 * (float)(width * height);
-  g /= 255 * (float)(width * height);
-  b /= 255 * (float)(width * height);
-  
-  float h,s,v;
-  RGBtoHSV(r, g, b, &h, &s, &v);
-  static float lastH = 0;
-  float highPassValue = h - lastH;
-  lastH = h;
-  float lastHighPassValue = 0;
-  float lowPassValue = (lastHighPassValue + highPassValue) / 2;
-  lastHighPassValue = highPassValue;
-  
-  [self render:context value:[NSNumber numberWithFloat:lowPassValue]];
+  float low = lowPassValue(height, width, buf, bytesPerRow);
+  [self render:context value:[NSNumber numberWithFloat:low]];
   
   CGImageRef quartzImage = CGBitmapContextCreateImage(context);
   
@@ -160,23 +83,22 @@
 
 - (void)render:(CGContextRef)context value:(NSNumber *)value
 {
-  if(!points) {
-    points = [NSMutableArray new];
-    datas = [NSMutableArray new];
-  }
-  [points insertObject:value atIndex:0];
-  NSNumber *data = [NSNumber numberWithFloat:([value floatValue] + 1) * 100000];
-  [datas insertObject:data atIndex:0];
+  NSNumber *point = [NSNumber numberWithFloat:[value floatValue] * -1];
+  [self.points insertObject:point atIndex:0];
+  NSNumber *beat = [NSNumber numberWithFloat:([value floatValue] + 1) * 100000];
+  [self.beats insertObject:beat atIndex:0];
   
   [self drawWithContext:context];
 }
 
 - (void)drawWithContext: (CGContextRef)context {
-  CGRect bounds = imageLayer.bounds;
-  while(points.count > bounds.size.width / 2)
-    [points removeLastObject];
-  if(points.count == 0) {
+  if(self.points.count == 0) {
     return;
+  }
+  
+  CGRect bounds = imageLayer.bounds;
+  while(self.points.count > bounds.size.width / 2) {
+    [self.points removeLastObject];
   }
   CGContextSetStrokeColorWithColor(context, [UIColor whiteColor].CGColor);
   CGContextSetLineWidth(context, 2);
@@ -190,42 +112,104 @@
   CGContextScaleCTM(context, scale, scale);
   
   float xpos = bounds.size.width * scale;
-  float ypos = [[points objectAtIndex:0] floatValue];
+  float ypos = [[self.points objectAtIndex:0] floatValue];
   
   CGContextMoveToPoint(context, xpos, ypos);
-  for(int i = 1; i < points.count; i++) {
+  for(int i = 1; i < self.points.count; i++) {
     xpos -= 5;
-    float ypos = [[points objectAtIndex:i] floatValue];
+    float ypos = [[self.points objectAtIndex:i] floatValue];
     CGContextAddLineToPoint(context, xpos, bounds.size.height / 2 + ypos * bounds.size.height / 2);
   }
   CGContextStrokePath(context);
   CGContextRestoreGState(context);
 }
 
-void RGBtoHSV(float r, float g, float b, float *h, float *s, float *v) {
-  float min, max, delta;
-  min = MIN(r, MIN(g, b));
-  max = MAX(r, MAX(g, b));
-  *v = max;
-  delta = max - min;
-  if(max != 0)
-    *s = delta / max;
-  else {
-    *s = 0;
-    *h = -1;
-    return;
+- (void)showErrorAlert: (NSError *)error {
+  UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:[NSString stringWithFormat:@"Error %d", (int)[error code]]
+                                                        message:[error localizedDescription]
+                                                       delegate:nil
+                                              cancelButtonTitle:@"OK"
+                                              otherButtonTitles:nil];
+  [alertView show];
+  return;
+}
+
+#pragma mark - configure capture
+
+- (AVCaptureSession *)session {
+  if (_session == nil) {
+    _session = [AVCaptureSession new];
+    [self configureSessionWithBlock:^() {
+      [self configureSession];
+    }];
   }
-  if(r == max) {
-    *h = (g - b) / delta;
-  } else if(g == max) {
-    *h = 2 + (b - r) / delta;
-  } else {
-    *h = 4 + (r - g) / delta;
+  return _session;
+}
+
+- (void)configureSessionWithBlock:(void (^)(void))configureBlock {
+  [self.session beginConfiguration];
+  configureBlock();
+  [self.session commitConfiguration];
+}
+
+- (void)configureSession {
+  [self configureDeviceInput];
+  [self configureVideoDataOutput];
+}
+
+- (void)configureDeviceInput {
+  AVCaptureDevice *device = [self defaultDevice];
+  
+  NSError *error = nil;
+  AVCaptureDeviceInput *deviceInput = [AVCaptureDeviceInput deviceInputWithDevice:device error:&error];
+  if (error) {
+    [self showErrorAlert:error];
   }
-  *h *= 60;
-  if(*h < 0) {
-    *h += 360;
+  
+  if ([self.session canAddInput:deviceInput]) {
+    [self.session addInput:deviceInput];
   }
+}
+
+- (AVCaptureDevice *)defaultDevice {
+  AVCaptureDevice *device = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
+  if([device isTorchModeSupported:AVCaptureTorchModeOn]) {
+    [device lockForConfiguration:nil];
+    [device setTorchMode:AVCaptureTorchModeOn];
+    [device setActiveVideoMinFrameDuration:CMTimeMake(1, 10)];
+    [device unlockForConfiguration];
+  }
+  return device;
+}
+
+- (void)configureVideoDataOutput {
+  AVCaptureVideoDataOutput *videoDataOutput = [AVCaptureVideoDataOutput new];
+  NSDictionary *rgbOutputSettings = [NSDictionary dictionaryWithObject:
+                                     [NSNumber numberWithInt:kCMPixelFormat_32BGRA] forKey:(id)kCVPixelBufferPixelFormatTypeKey];
+  [videoDataOutput setVideoSettings:rgbOutputSettings];
+  [videoDataOutput setAlwaysDiscardsLateVideoFrames:YES];
+  dispatch_queue_t videoDataOutputQueue = dispatch_queue_create("VideoDataOutputQueue", DISPATCH_QUEUE_SERIAL);
+  [videoDataOutput setSampleBufferDelegate:self queue:videoDataOutputQueue];
+  
+  if ([self.session canAddOutput:videoDataOutput]) {
+    [self.session addOutput:videoDataOutput];
+  }
+  AVCaptureConnection* connection = [videoDataOutput connectionWithMediaType:AVMediaTypeVideo];
+  [connection setVideoOrientation:AVCaptureVideoOrientationPortrait];
+}
+
+- (NSMutableArray *)points {
+  if (_points == nil) {
+    _points = [NSMutableArray new];
+  }
+  return _points;
+}
+
+- (NSMutableArray *)beats {
+  if (_beats == nil) {
+    _beats = [NSMutableArray new];
+  }
+  return _beats;
 }
 
 @end
