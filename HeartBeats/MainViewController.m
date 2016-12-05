@@ -23,7 +23,7 @@
   [super viewDidLoad];
   
   [self setupImageLayer];
-  [self startAVCapture];
+  [self setupSwitch];
 }
 
 - (void)setupImageLayer {
@@ -31,6 +31,26 @@
   imageLayer.frame = self.view.layer.bounds;
   imageLayer.contentsGravity = kCAGravityResizeAspectFill;
   [self.view.layer addSublayer:imageLayer];
+}
+
+- (void)setupSwitch {
+  UIButton *switchButton = [[UIButton alloc] initWithFrame:CGRectMake(20, 20, 100, 40)];
+  switchButton.backgroundColor = [UIColor clearColor];
+  [switchButton setTitle:@"开始" forState:UIControlStateNormal];
+  switchButton.center = CGPointMake(self.view.center.x, self.view.frame.size.height - 100);
+  [switchButton addTarget:self action:@selector(switchAction:) forControlEvents:UIControlEventTouchUpInside];
+  
+  [self.view addSubview:switchButton];
+}
+
+- (void)switchAction:(UIButton *)sender {
+  if (self.hasStartedRecording) {
+    [self stopAVCapture];
+    self.hasStartedRecording = NO;
+  } else {
+    [self startAVCapture];
+    self.hasStartedRecording = YES;
+  }
 }
 
 - (void)viewWillDisappear:(BOOL)animated {
@@ -41,12 +61,12 @@
   [self.session startRunning];
 }
 
-
 - (void)stopAVCapture
 {
   [self.session stopRunning];
   _session = nil;
   _points = nil;
+  _beats = nil;
 }
 
 #pragma mark - AVCaptureVideoDataOutputSampleBufferDelegate
