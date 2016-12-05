@@ -4,16 +4,23 @@
 
 #import "MainViewController.h"
 #import "HSVUtils.h"
+#import "NetworkService.h"
+
+static float timeInterval = 20.f;
 
 @interface MainViewController () {
   CALayer* imageLayer;
 }
 
+@property (nonatomic, strong) UIButton *switchButton;
+
 @property (nonatomic, strong) AVCaptureSession *session;
 @property (nonatomic, strong) NSMutableArray *points;
 @property (nonatomic, strong) NSMutableArray *beats;
 
-@property (nonatomic, assign) BOOL hasStartedRecording;
+@property (nonatomic, strong) NSTimer *timer;
+
+@property (nonatomic, assign) BOOL isRecording;
 
 @end
 
@@ -24,6 +31,7 @@
   
   [self setupImageLayer];
   [self setupSwitch];
+  [self startAVCapture];
 }
 
 - (void)setupImageLayer {
@@ -35,22 +43,62 @@
 
 - (void)setupSwitch {
   UIButton *switchButton = [[UIButton alloc] initWithFrame:CGRectMake(20, 20, 100, 40)];
-  switchButton.backgroundColor = [UIColor clearColor];
+  switchButton.backgroundColor = [UIColor whiteColor];
+  [switchButton setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
+  switchButton.layer.cornerRadius = 4.f;
+  switchButton.layer.masksToBounds = YES;
+  switchButton.layer.borderWidth = 2.f;
+  switchButton.layer.borderColor = [UIColor blackColor].CGColor;
   [switchButton setTitle:@"开始" forState:UIControlStateNormal];
   switchButton.center = CGPointMake(self.view.center.x, self.view.frame.size.height - 100);
   [switchButton addTarget:self action:@selector(switchAction:) forControlEvents:UIControlEventTouchUpInside];
   
   [self.view addSubview:switchButton];
+  self.switchButton = switchButton;
 }
 
 - (void)switchAction:(UIButton *)sender {
-  if (self.hasStartedRecording) {
-    [self stopAVCapture];
-    self.hasStartedRecording = NO;
+  if (self.isRecording) {
+    self.isRecording = NO;
+    NSLog(@"%@", self.beats);
+    _beats = nil;
+    self.timer = nil;
+    [self.switchButton setTitle:@"开始" forState:UIControlStateNormal];
   } else {
-    [self startAVCapture];
-    self.hasStartedRecording = YES;
+    self.isRecording = YES;
+    self.timer = [NSTimer scheduledTimerWithTimeInterval:20.f target:self selector:@selector(hi) userInfo:nil repeats:YES];
+    [self.switchButton setTitle:@"暂停" forState:UIControlStateNormal];
   }
+}
+
+- (void)hi {
+  NSDictionary *HSVData = @{
+                            @"time": [self currentTime],
+                            @"user": [[[UIDevice currentDevice] identifierForVendor] UUIDString],
+                            @"time_interval": [NSNumber numberWithFloat:timeInterval],
+                            @"sample_rate": [self sampleRate],
+                            @"label": @"none",
+                            @"origin_data": self.beats
+                            };
+  NetworkService *networkService = [NetworkService sharedService];
+  [networkService post:@"http://61.52.193.53:8080/data" parameters:HSVData success:^(NSDictionary *data) {
+    NSLog(@"%@",data);
+    _beats = nil;
+  } failure:^(NSError *error) {
+    [self showErrorAlert:error];
+  }];
+  
+}
+
+- (NSString *)currentTime {
+  NSDate *date = [NSDate date];
+  NSDateFormatter *formatter = [NSDateFormatter new];
+  [formatter setDateFormat:@"yyyy-MM-dd hh:mm:ss"];
+  return [formatter stringFromDate:date];
+}
+
+- (NSNumber *)sampleRate {
+  return [NSNumber numberWithFloat:self.beats.count / timeInterval];
 }
 
 - (void)viewWillDisappear:(BOOL)animated {
@@ -105,8 +153,10 @@
 {
   NSNumber *point = [NSNumber numberWithFloat:[value floatValue] * -1];
   [self.points insertObject:point atIndex:0];
-  NSNumber *beat = [NSNumber numberWithFloat:([value floatValue] + 1) * 100000];
-  [self.beats insertObject:beat atIndex:0];
+  if (self.isRecording) {
+    NSNumber *beat = [NSNumber numberWithFloat:([value floatValue] + 1) * 100000];
+    [self.beats insertObject:beat atIndex:0];
+  }
   
   [self drawWithContext:context];
 }

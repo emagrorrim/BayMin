@@ -15,14 +15,14 @@
 
 + (NetworkService *)sharedService {
   static NetworkService *networkService;
-  if (networkService != nil) {
+  if (networkService == nil) {
     networkService = [NetworkService new];
   }
   return networkService;
 }
 
 - (void)configureHTTPSessionManagerWith:(NSURL *)url AndConfiguration:(NSURLSessionConfiguration * _Nullable)configuration  {
-  _manager = [[AFHTTPSessionManager alloc] initWithBaseURL:url sessionConfiguration:configuration];
+  _manager = [[AFHTTPSessionManager alloc] initWithBaseURL:url sessionConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration]];
 }
 
 - (void)post:(NSString *)url parameters:(NSDictionary *)parameters success:(void (^)(NSDictionary *))success failure:(void (^)(NSError *))failure {
