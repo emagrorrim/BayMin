@@ -17,6 +17,7 @@ static float timeInterval = 20.f;
 @property (nonatomic, strong) AVCaptureSession *session;
 @property (nonatomic, strong) NSMutableArray *points;
 @property (nonatomic, strong) NSMutableArray *beats;
+@property (nonatomic, strong) NSMutableArray *captureTimes;
 
 @property (nonatomic, strong) NSTimer *timer;
 
@@ -62,6 +63,8 @@ static float timeInterval = 20.f;
     self.isRecording = NO;
     NSLog(@"%@", self.beats);
     _beats = nil;
+    _captureTimes = nil;
+    [self.timer invalidate];
     self.timer = nil;
     [self.switchButton setTitle:@"开始" forState:UIControlStateNormal];
   } else {
@@ -78,12 +81,14 @@ static float timeInterval = 20.f;
                             @"time_interval": [NSNumber numberWithFloat:timeInterval],
                             @"sample_rate": [self sampleRate],
                             @"label": @"none",
-                            @"origin_data": self.beats
+                            @"origin_data": [self.beats copy],
+                            @"origin_time": [self.captureTimes copy]
                             };
   NetworkService *networkService = [NetworkService sharedService];
-  [networkService post:@"http://61.52.193.53:8080/data" parameters:HSVData success:^(NSDictionary *data) {
+  [networkService post:@"/api" parameters:HSVData success:^(NSDictionary *data) {
     NSLog(@"%@",data);
     _beats = nil;
+    _captureTimes = nil;
   } failure:^(NSError *error) {
     [self showErrorAlert:error];
   }];
@@ -115,6 +120,7 @@ static float timeInterval = 20.f;
   _session = nil;
   _points = nil;
   _beats = nil;
+  _captureTimes = nil;
 }
 
 #pragma mark - AVCaptureVideoDataOutputSampleBufferDelegate
@@ -154,6 +160,7 @@ static float timeInterval = 20.f;
   NSNumber *point = [NSNumber numberWithFloat:[value floatValue] * -1];
   [self.points insertObject:point atIndex:0];
   if (self.isRecording) {
+    [self.captureTimes insertObject:[self currentTime] atIndex:0];
     NSNumber *beat = [NSNumber numberWithFloat:([value floatValue] + 1) * 100000];
     [self.beats insertObject:beat atIndex:0];
   }
@@ -280,6 +287,13 @@ static float timeInterval = 20.f;
     _beats = [NSMutableArray new];
   }
   return _beats;
+}
+
+- (NSMutableArray *)captureTimes {
+  if (_captureTimes == nil) {
+    _captureTimes = [NSMutableArray new];
+  }
+  return _captureTimes;
 }
 
 @end

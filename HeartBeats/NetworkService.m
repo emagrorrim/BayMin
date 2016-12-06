@@ -42,7 +42,9 @@
 
 - (AFHTTPSessionManager *)manager {
   if (!_manager) {
-    _manager = [AFHTTPSessionManager new];
+    NSString *plistPath = [[NSBundle mainBundle]pathForResource:@"Network" ofType:@"plist"];
+    NSMutableDictionary *dataDic = [[NSMutableDictionary alloc]initWithContentsOfFile:plistPath];
+    _manager = [[AFHTTPSessionManager alloc] initWithBaseURL:[NSURL URLWithString:dataDic[@"root_url"]] sessionConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration]];
   }
   return _manager;
 }
