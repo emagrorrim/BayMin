@@ -12,6 +12,7 @@ static float timeInterval = 20.f;
   CALayer* imageLayer;
 }
 
+@property (nonatomic, strong) UILabel *timeLabel;
 @property (nonatomic, strong) UIButton *switchButton;
 
 @property (nonatomic, strong) AVCaptureSession *session;
@@ -20,6 +21,7 @@ static float timeInterval = 20.f;
 @property (nonatomic, strong) NSMutableArray *captureTimes;
 
 @property (nonatomic, strong) NSTimer *timer;
+@property (nonatomic, strong) NSTimer *secondsTimer;
 
 @property (nonatomic, assign) BOOL isRecording;
 
@@ -31,6 +33,7 @@ static float timeInterval = 20.f;
   [super viewDidLoad];
   
   [self setupImageLayer];
+  [self setupTimeLabel];
   [self setupSwitch];
   [self startAVCapture];
 }
@@ -40,6 +43,45 @@ static float timeInterval = 20.f;
   imageLayer.frame = self.view.layer.bounds;
   imageLayer.contentsGravity = kCAGravityResizeAspectFill;
   [self.view.layer addSublayer:imageLayer];
+}
+
+- (void)setupTimeLabel {
+  UILabel *timeLabel = [UILabel new];
+  timeLabel.font = [UIFont fontWithName:@"Times New Roman" size:35.f];
+  timeLabel.text = @"00:00:00";
+  timeLabel.textAlignment = NSTextAlignmentCenter;
+  timeLabel.textColor = [UIColor blackColor];
+  timeLabel.backgroundColor = [UIColor whiteColor];
+  timeLabel.layer.masksToBounds = YES;
+  timeLabel.layer.borderWidth = 2.f;
+  timeLabel.layer.borderColor = [UIColor blackColor].CGColor;
+  timeLabel.layer.cornerRadius = 4.f;
+  timeLabel.frame = CGRectMake(0.f, 100.f, 200.f, 80.f);
+  timeLabel.center = CGPointMake(self.view.center.x, timeLabel.frame.origin.y);
+  timeLabel.adjustsFontSizeToFitWidth = YES;
+  
+  [self.view addSubview:timeLabel];
+  self.timeLabel = timeLabel;
+}
+
+- (void)updateTimePerMs {
+  NSArray *timeComponents = [self.timeLabel.text componentsSeparatedByString:@":"];
+  NSInteger m = [[timeComponents objectAtIndex:0] integerValue];
+  NSInteger s = [[timeComponents objectAtIndex:1] integerValue];
+  NSInteger ms = [[timeComponents objectAtIndex:2] integerValue];
+  ms++;
+  if (ms >= 100) {
+    ms = 0;
+    s++;
+    if (s >= 60) {
+      s = 0;
+      m++;
+      if (m >= 60) {
+        m = 0;
+      }
+    }
+  }
+  self.timeLabel.text = [NSString stringWithFormat:@"%02ld:%02ld:%02ld", (long)m, (long)s, (long)ms];
 }
 
 - (void)setupSwitch {
@@ -65,16 +107,20 @@ static float timeInterval = 20.f;
     _beats = nil;
     _captureTimes = nil;
     [self.timer invalidate];
+    [self.secondsTimer invalidate];
     self.timer = nil;
+    self.secondsTimer = nil;
     [self.switchButton setTitle:@"开始" forState:UIControlStateNormal];
   } else {
+    self.timeLabel.text = @"00:00:00";
     self.isRecording = YES;
-    self.timer = [NSTimer scheduledTimerWithTimeInterval:20.f target:self selector:@selector(hi) userInfo:nil repeats:YES];
-    [self.switchButton setTitle:@"暂停" forState:UIControlStateNormal];
+    self.timer = [NSTimer scheduledTimerWithTimeInterval:20.f target:self selector:@selector(sendData) userInfo:nil repeats:YES];
+    self.secondsTimer = [NSTimer scheduledTimerWithTimeInterval:0.01 target:self selector:@selector(updateTimePerMs) userInfo:nil repeats:YES];
+    [self.switchButton setTitle:@"停止" forState:UIControlStateNormal];
   }
 }
 
-- (void)hi {
+- (void)sendData {
   NSDictionary *HSVData = @{
                             @"time": [self currentTime],
                             @"user": [[[UIDevice currentDevice] identifierForVendor] UUIDString],
