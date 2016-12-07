@@ -6,7 +6,7 @@
 #import "HSVUtils.h"
 #import "NetworkService.h"
 
-static float timeInterval = 20.f;
+static float timeInterval = 10.f;
 
 @interface MainViewController () {
   CALayer* imageLayer;
@@ -114,7 +114,7 @@ static float timeInterval = 20.f;
   } else {
     self.timeLabel.text = @"00:00:00";
     self.isRecording = YES;
-    self.timer = [NSTimer scheduledTimerWithTimeInterval:20.f target:self selector:@selector(sendData) userInfo:nil repeats:YES];
+    self.timer = [NSTimer scheduledTimerWithTimeInterval:timeInterval target:self selector:@selector(sendData) userInfo:nil repeats:YES];
     self.secondsTimer = [NSTimer scheduledTimerWithTimeInterval:0.01 target:self selector:@selector(updateTimePerMs) userInfo:nil repeats:YES];
     [self.switchButton setTitle:@"停止" forState:UIControlStateNormal];
   }
@@ -127,17 +127,32 @@ static float timeInterval = 20.f;
                             @"time_interval": [NSNumber numberWithFloat:timeInterval],
                             @"sample_rate": [self sampleRate],
                             @"label": @"none",
-                            @"origin_data": [self.beats copy],
-                            @"origin_time": [self.captureTimes copy]
+                            @"origin_data": [self reverseArray:[self.beats copy]],
+                            @"origin_time": [self reverseArray:[self.captureTimes copy]]
                             };
   NetworkService *networkService = [NetworkService sharedService];
-  [networkService post:@"/api" parameters:HSVData success:^(NSDictionary *data) {
-    NSLog(@"%@",data);
-    _beats = nil;
-    _captureTimes = nil;
+  [networkService post:@"/data" parameters:HSVData success:^(NSDictionary *response) {
+    [self updateHeartRate: response[@"heart_rate"]];
+    [self handleEmotionChange: response[@"emotion_changed"]];
   } failure:^(NSError *error) {
     [self showErrorAlert:error];
   }];
+}
+
+- (NSArray *)reverseArray:(NSArray *)array {
+  NSMutableArray *array2 = [NSMutableArray arrayWithCapacity:[array count]];
+  NSEnumerator *enumerator = [array reverseObjectEnumerator];
+  for (id element in enumerator) {
+    [array2 addObject:element];
+  }
+  return array2;
+}
+
+- (void)updateHeartRate:(NSString *)heartRate {
+  
+}
+
+- (void)handleEmotionChange:(NSInteger)emotionChanged {
   
 }
 
@@ -206,8 +221,9 @@ static float timeInterval = 20.f;
   NSNumber *point = [NSNumber numberWithFloat:[value floatValue] * -1];
   [self.points insertObject:point atIndex:0];
   if (self.isRecording) {
-    [self.captureTimes insertObject:[self currentTime] atIndex:0];
-    NSNumber *beat = [NSNumber numberWithFloat:([value floatValue] + 1) * 100000];
+    NSNumber *time = [NSNumber numberWithDouble: [[NSDate date] timeIntervalSince1970] * 1000.0];
+    [self.captureTimes insertObject:time atIndex:0];
+    NSNumber *beat = [NSNumber numberWithInt:([value floatValue] + 1) * 100000];
     [self.beats insertObject:beat atIndex:0];
   }
   

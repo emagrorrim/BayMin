@@ -45,6 +45,8 @@
     NSString *plistPath = [[NSBundle mainBundle]pathForResource:@"Network" ofType:@"plist"];
     NSMutableDictionary *dataDic = [[NSMutableDictionary alloc]initWithContentsOfFile:plistPath];
     _manager = [[AFHTTPSessionManager alloc] initWithBaseURL:[NSURL URLWithString:dataDic[@"root_url"]] sessionConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration]];
+    _manager.requestSerializer = [AFJSONRequestSerializer serializer];
+    [_manager.requestSerializer setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
   }
   return _manager;
 }

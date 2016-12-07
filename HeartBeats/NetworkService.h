@@ -6,8 +6,8 @@
 
 @interface NetworkService : NSObject
 
-+ (NetworkService *)sharedService;
-- (void)post:(NSString *)url parameters:(NSDictionary *)parameters success:(void (^)(NSDictionary *))success failure:(void (^)(NSError *))failure;
-- (void)configureHTTPSessionManagerWith:(NSURL *)url AndConfiguration:(NSURLSessionConfiguration * _Nullable)configuration;
++ (NetworkService  * _Nonnull)sharedService;
+- (void)post:(NSString * _Nonnull)url parameters:(NSDictionary * _Nonnull)parameters success:(void (^ _Nullable)(NSDictionary * _Nonnull))success failure:(void (^ _Nullable)(NSError * _Nullable))failure;
+- (void)configureHTTPSessionManagerWith:(NSURL * _Nonnull)url AndConfiguration:(NSURLSessionConfiguration * _Nullable)configuration;
 
 @end
