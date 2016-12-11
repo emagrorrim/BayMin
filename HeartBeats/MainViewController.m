@@ -8,12 +8,16 @@
 
 static float timeInterval = 10.f;
 
-@interface MainViewController () {
+@interface MainViewController()<UITextFieldDelegate, AVAudioPlayerDelegate> {
   CALayer* imageLayer;
 }
 
+@property (nonatomic, strong) AVAudioPlayer *player;
+
+@property (nonatomic, strong) UILabel *heartRateLabel;
 @property (nonatomic, strong) UILabel *timeLabel;
 @property (nonatomic, strong) UIButton *switchButton;
+@property (nonatomic, strong) UITextField *ipConfigTextField;
 
 @property (nonatomic, strong) AVCaptureSession *session;
 @property (nonatomic, strong) NSMutableArray *points;
@@ -33,7 +37,13 @@ static float timeInterval = 10.f;
   [super viewDidLoad];
   
   [self setupImageLayer];
+  
+  if ([[Toggle sharedInstance] enableConfigureIPAddress]) {
+    [self setupIpConfigTextField];
+  }
+  
   [self setupTimeLabel];
+  [self setupHeartRateLabel];
   [self setupSwitch];
   [self startAVCapture];
 }
@@ -45,8 +55,27 @@ static float timeInterval = 10.f;
   [self.view.layer addSublayer:imageLayer];
 }
 
+- (void)setupIpConfigTextField {
+  UITextField *ipConfigTextField = [[UITextField alloc] initWithFrame:CGRectMake(0, 20, self.view.frame.size.width, 30)];
+  ipConfigTextField.delegate = self;
+  ipConfigTextField.backgroundColor = [UIColor whiteColor];
+  ipConfigTextField.layer.cornerRadius = 4.f;
+  ipConfigTextField.layer.masksToBounds = YES;
+  ipConfigTextField.layer.borderWidth = 2.f;
+  ipConfigTextField.layer.borderColor = [UIColor blackColor].CGColor;
+  ipConfigTextField.text = @"";
+  [self.view addSubview:ipConfigTextField];
+  self.ipConfigTextField = ipConfigTextField;
+}
+
+- (BOOL)textFieldShouldReturn:(UITextField *)textField {
+  [self.ipConfigTextField resignFirstResponder];
+  return YES;
+}
+
 - (void)setupTimeLabel {
-  UILabel *timeLabel = [UILabel new];
+  UILabel *timeLabel = [[UILabel alloc] initWithFrame:CGRectMake(0.f, 100.f, 200.f, 80.f)];
+  timeLabel.center = CGPointMake(self.view.center.x, timeLabel.frame.origin.y);
   timeLabel.font = [UIFont fontWithName:@"Times New Roman" size:35.f];
   timeLabel.text = @"00:00:00";
   timeLabel.textAlignment = NSTextAlignmentCenter;
@@ -56,15 +85,29 @@ static float timeInterval = 10.f;
   timeLabel.layer.borderWidth = 2.f;
   timeLabel.layer.borderColor = [UIColor blackColor].CGColor;
   timeLabel.layer.cornerRadius = 4.f;
-  timeLabel.frame = CGRectMake(0.f, 100.f, 200.f, 80.f);
-  timeLabel.center = CGPointMake(self.view.center.x, timeLabel.frame.origin.y);
   timeLabel.adjustsFontSizeToFitWidth = YES;
   
   [self.view addSubview:timeLabel];
   self.timeLabel = timeLabel;
 }
 
-- (void)updateTimePerMs {
+- (void)setupHeartRateLabel {
+  UILabel *heartRateLabel = [[UILabel alloc] initWithFrame:CGRectMake(self.view.frame.size.width - 150.f, 20.f, 100.f, 30.f)];
+  heartRateLabel.font = [UIFont fontWithName:@"Times New Roman" size:16.f];
+  heartRateLabel.text = @"--/分钟";
+  heartRateLabel.textAlignment = NSTextAlignmentCenter;
+  heartRateLabel.textColor = [UIColor blackColor];
+  heartRateLabel.backgroundColor = [UIColor whiteColor];
+  heartRateLabel.layer.masksToBounds = YES;
+  heartRateLabel.layer.borderWidth = 2.f;
+  heartRateLabel.layer.borderColor = [UIColor blackColor].CGColor;
+  heartRateLabel.layer.cornerRadius = 4.f;
+  
+  [self.view addSubview:heartRateLabel];
+  self.heartRateLabel = heartRateLabel;
+}
+
+- (void)updateTime {
   NSArray *timeComponents = [self.timeLabel.text componentsSeparatedByString:@":"];
   NSInteger m = [[timeComponents objectAtIndex:0] integerValue];
   NSInteger s = [[timeComponents objectAtIndex:1] integerValue];
@@ -115,56 +158,9 @@ static float timeInterval = 10.f;
     self.timeLabel.text = @"00:00:00";
     self.isRecording = YES;
     self.timer = [NSTimer scheduledTimerWithTimeInterval:timeInterval target:self selector:@selector(sendData) userInfo:nil repeats:YES];
-    self.secondsTimer = [NSTimer scheduledTimerWithTimeInterval:0.01 target:self selector:@selector(updateTimePerMs) userInfo:nil repeats:YES];
+    self.secondsTimer = [NSTimer scheduledTimerWithTimeInterval:0.01 target:self selector:@selector(updateTime) userInfo:nil repeats:YES];
     [self.switchButton setTitle:@"停止" forState:UIControlStateNormal];
   }
-}
-
-- (void)sendData {
-  NSDictionary *HSVData = @{
-                            @"time": [self currentTime],
-                            @"user": [[[UIDevice currentDevice] identifierForVendor] UUIDString],
-                            @"time_interval": [NSNumber numberWithFloat:timeInterval],
-                            @"sample_rate": [self sampleRate],
-                            @"label": @"none",
-                            @"origin_data": [self reverseArray:[self.beats copy]],
-                            @"origin_time": [self reverseArray:[self.captureTimes copy]]
-                            };
-  NetworkService *networkService = [NetworkService sharedService];
-  [networkService post:@"/data" parameters:HSVData success:^(NSDictionary *response) {
-    [self updateHeartRate: response[@"heart_rate"]];
-    [self handleEmotionChange: response[@"emotion_changed"]];
-  } failure:^(NSError *error) {
-    [self showErrorAlert:error];
-  }];
-}
-
-- (NSArray *)reverseArray:(NSArray *)array {
-  NSMutableArray *array2 = [NSMutableArray arrayWithCapacity:[array count]];
-  NSEnumerator *enumerator = [array reverseObjectEnumerator];
-  for (id element in enumerator) {
-    [array2 addObject:element];
-  }
-  return array2;
-}
-
-- (void)updateHeartRate:(NSString *)heartRate {
-  
-}
-
-- (void)handleEmotionChange:(NSInteger)emotionChanged {
-  
-}
-
-- (NSString *)currentTime {
-  NSDate *date = [NSDate date];
-  NSDateFormatter *formatter = [NSDateFormatter new];
-  [formatter setDateFormat:@"yyyy-MM-dd hh:mm:ss"];
-  return [formatter stringFromDate:date];
-}
-
-- (NSNumber *)sampleRate {
-  return [NSNumber numberWithFloat:self.beats.count / timeInterval];
 }
 
 - (void)viewWillDisappear:(BOOL)animated {
@@ -182,6 +178,54 @@ static float timeInterval = 10.f;
   _points = nil;
   _beats = nil;
   _captureTimes = nil;
+}
+
+- (void)sendData {
+  NSDictionary *HSVData = @{
+                            @"time": [self currentTime],
+                            @"user": [[[UIDevice currentDevice] identifierForVendor] UUIDString],
+                            @"time_interval": [NSNumber numberWithFloat:timeInterval],
+                            @"sample_rate": [self sampleRate],
+                            @"label": @"none",
+                            @"origin_data": [[self.beats copy] reverse],
+                            @"origin_time": [[self.captureTimes copy] reverse]
+                            };
+  NetworkService *networkService = [NetworkService sharedService];
+  if (![[self.ipConfigTextField.text stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]] isEqualToString:@""] && [[Toggle sharedInstance] enableConfigureIPAddress]) {
+    [networkService configureHTTPSessionManagerWith:[NSURL URLWithString:[self.ipConfigTextField.text stringByAppendingString:@":8080"]]];
+  }
+  [networkService post:@"/data" parameters:HSVData success:^(NSDictionary *response) {
+    NSLog(@"%@", response);
+    [self updateHeartRate: response[@"heart_rate"]];
+    [self handleEmotionChange: response[@"emotion_changed"]];
+  } failure:^(NSError *error) {
+    [self showErrorAlert:error];
+  }];
+}
+
+- (NSString *)currentTime {
+  NSDate *date = [NSDate date];
+  NSDateFormatter *formatter = [NSDateFormatter new];
+  [formatter setDateFormat:@"yyyy-MM-dd hh:mm:ss"];
+  return [formatter stringFromDate:date];
+}
+
+- (NSNumber *)sampleRate {
+  return [NSNumber numberWithFloat:self.beats.count / timeInterval];
+}
+
+- (void)updateHeartRate:(NSString *)heartRate {
+  self.heartRateLabel.text = [heartRate stringByAppendingString:@"/分钟"];
+}
+
+- (void)handleEmotionChange:(id)emotionChanged {
+  if (emotionChanged) {
+    if ([self.player isPlaying]) {
+      [self.player stop];
+      self.player = nil;
+    }
+    [self.player play];
+  }
 }
 
 #pragma mark - AVCaptureVideoDataOutputSampleBufferDelegate
@@ -356,6 +400,23 @@ static float timeInterval = 10.f;
     _captureTimes = [NSMutableArray new];
   }
   return _captureTimes;
+}
+
+#pragma mark - AVAudioPlayer
+
+- (AVAudioPlayer *)player {
+  if (!_player) {
+    NSURL *fileURL = [[NSBundle mainBundle] URLForResource:@"GARNiDELiA.mp3" withExtension:nil];
+    NSError *error = nil;
+    _player = [[AVAudioPlayer alloc]initWithContentsOfURL:fileURL error:&error];
+    if (error) {
+      return nil;
+    }
+    _player.numberOfLoops = 0;
+    _player.delegate = self;
+    [_player prepareToPlay];
+  }
+  return _player;
 }
 
 @end

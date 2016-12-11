@@ -21,8 +21,13 @@
   return networkService;
 }
 
-- (void)configureHTTPSessionManagerWith:(NSURL *)url AndConfiguration:(NSURLSessionConfiguration * _Nullable)configuration  {
+- (void)configureHTTPSessionManagerWith:(NSURL *)url {
+  if (![url.absoluteString hasPrefix:@"http://"]) {
+    url = [NSURL URLWithString:[@"http://" stringByAppendingString:url.absoluteString]];
+  }
   _manager = [[AFHTTPSessionManager alloc] initWithBaseURL:url sessionConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration]];
+  _manager.requestSerializer = [AFJSONRequestSerializer serializer];
+  [_manager.requestSerializer setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
 }
 
 - (void)post:(NSString *)url parameters:(NSDictionary *)parameters success:(void (^)(NSDictionary *))success failure:(void (^)(NSError *))failure {

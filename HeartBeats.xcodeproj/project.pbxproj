@@ -25,6 +25,9 @@
 		62BC738012D9B3C4235D9B4A /* Pods_HeartBeats.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 00F3D4667D15ABADD8931F7C /* Pods_HeartBeats.framework */; settings = {ATTRIBUTES = (Required, ); }; };
 		7C1053651DF30A1700EBE09D /* HSVUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = 7C1053641DF30A1700EBE09D /* HSVUtils.m */; };
 		7C1BB8A21DF6D798002A2D96 /* Network.plist in Resources */ = {isa = PBXBuildFile; fileRef = 7C1BB8A11DF6D798002A2D96 /* Network.plist */; };
+		7C5C4B311DFD58D6002DF05A /* Toggle.m in Sources */ = {isa = PBXBuildFile; fileRef = 7C5C4B301DFD58D6002DF05A /* Toggle.m */; };
+		7C5C4B341DFD5D24002DF05A /* NSArray+ArrayOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = 7C5C4B331DFD5D24002DF05A /* NSArray+ArrayOperation.m */; };
+		7C5C4B371DFD67D7002DF05A /* GARNiDELiA.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 7C5C4B361DFD67D7002DF05A /* GARNiDELiA.mp3 */; };
 		7C5F90F41DF7FD3300CDC41E /* hb.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 7C5F90F31DF7FD3300CDC41E /* hb.jpg */; };
 		7C5F90F61DF7FD4500CDC41E /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7C5F90F51DF7FD4500CDC41E /* Images.xcassets */; };
 		7CE305EA1DF28CE50051B02D /* NetworkService.m in Sources */ = {isa = PBXBuildFile; fileRef = 7CE305E91DF28CE50051B02D /* NetworkService.m */; };
@@ -56,6 +59,11 @@
 		7C1053631DF30A1700EBE09D /* HSVUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = HSVUtils.h; sourceTree = "<group>"; };
 		7C1053641DF30A1700EBE09D /* HSVUtils.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = HSVUtils.m; sourceTree = "<group>"; };
 		7C1BB8A11DF6D798002A2D96 /* Network.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Network.plist; sourceTree = "<group>"; };
+		7C5C4B2F1DFD58D6002DF05A /* Toggle.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Toggle.h; sourceTree = "<group>"; };
+		7C5C4B301DFD58D6002DF05A /* Toggle.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Toggle.m; sourceTree = "<group>"; };
+		7C5C4B321DFD5D24002DF05A /* NSArray+ArrayOperation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSArray+ArrayOperation.h"; sourceTree = "<group>"; };
+		7C5C4B331DFD5D24002DF05A /* NSArray+ArrayOperation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSArray+ArrayOperation.m"; sourceTree = "<group>"; };
+		7C5C4B361DFD67D7002DF05A /* GARNiDELiA.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = GARNiDELiA.mp3; sourceTree = "<group>"; };
 		7C5F90F31DF7FD3300CDC41E /* hb.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = hb.jpg; sourceTree = "<group>"; };
 		7C5F90F51DF7FD4500CDC41E /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
 		7CE305E81DF28CE50051B02D /* NetworkService.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NetworkService.h; sourceTree = "<group>"; };
@@ -120,6 +128,7 @@
 		2235792E17D176980063F8FD /* HeartBeats */ = {
 			isa = PBXGroup;
 			children = (
+				7C5C4B2E1DFD58C2002DF05A /* Common */,
 				7CE305EB1DF28CF00051B02D /* Network */,
 				2235793717D176980063F8FD /* AppDelegate.h */,
 				2235793817D176980063F8FD /* AppDelegate.m */,
@@ -136,6 +145,7 @@
 		2235792F17D176980063F8FD /* Supporting Files */ = {
 			isa = PBXGroup;
 			children = (
+				7C5C4B361DFD67D7002DF05A /* GARNiDELiA.mp3 */,
 				2235793017D176980063F8FD /* HeartBeats-Info.plist */,
 				2235793117D176980063F8FD /* InfoPlist.strings */,
 				2235793417D176980063F8FD /* main.m */,
@@ -147,6 +157,17 @@
 				7C1BB8A11DF6D798002A2D96 /* Network.plist */,
 			);
 			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		7C5C4B2E1DFD58C2002DF05A /* Common */ = {
+			isa = PBXGroup;
+			children = (
+				7C5C4B2F1DFD58D6002DF05A /* Toggle.h */,
+				7C5C4B301DFD58D6002DF05A /* Toggle.m */,
+				7C5C4B321DFD5D24002DF05A /* NSArray+ArrayOperation.h */,
+				7C5C4B331DFD5D24002DF05A /* NSArray+ArrayOperation.m */,
+			);
+			name = Common;
 			sourceTree = "<group>";
 		};
 		7CE305EB1DF28CF00051B02D /* Network */ = {
@@ -200,7 +221,7 @@
 				ORGANIZATIONNAME = "Christian Roman";
 				TargetAttributes = {
 					2235792417D176980063F8FD = {
-						DevelopmentTeam = 25EZUPR5QA;
+						DevelopmentTeam = JAX8P4BTK4;
 					};
 				};
 			};
@@ -231,6 +252,7 @@
 				7C5F90F61DF7FD4500CDC41E /* Images.xcassets in Resources */,
 				2235793B17D176980063F8FD /* Default.png in Resources */,
 				7C5F90F41DF7FD3300CDC41E /* hb.jpg in Resources */,
+				7C5C4B371DFD67D7002DF05A /* GARNiDELiA.mp3 in Resources */,
 				2235793D17D176980063F8FD /* Default@2x.png in Resources */,
 				2235793F17D176980063F8FD /* Default-568h@2x.png in Resources */,
 			);
@@ -291,9 +313,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7C5C4B341DFD5D24002DF05A /* NSArray+ArrayOperation.m in Sources */,
 				2235793517D176980063F8FD /* main.m in Sources */,
 				7C1053651DF30A1700EBE09D /* HSVUtils.m in Sources */,
 				2235793917D176980063F8FD /* AppDelegate.m in Sources */,
+				7C5C4B311DFD58D6002DF05A /* Toggle.m in Sources */,
 				7CE305EA1DF28CE50051B02D /* NetworkService.m in Sources */,
 				2235794717D176B10063F8FD /* MainViewController.m in Sources */,
 			);
@@ -393,12 +417,12 @@
 			baseConfigurationReference = 9F18B51E9A98FBFDCEF51066 /* Pods-HeartBeats.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				DEVELOPMENT_TEAM = 25EZUPR5QA;
+				DEVELOPMENT_TEAM = JAX8P4BTK4;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "HeartBeats/HeartBeats-Prefix.pch";
 				INFOPLIST_FILE = "HeartBeats/HeartBeats-Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.chroman.${PRODUCT_NAME:rfc1034identifier}";
+				PRODUCT_BUNDLE_IDENTIFIER = com.emagrorrim.HeartBeats;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = app;
 			};
@@ -409,12 +433,12 @@
 			baseConfigurationReference = 122D98783B6A03500952884D /* Pods-HeartBeats.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				DEVELOPMENT_TEAM = 25EZUPR5QA;
+				DEVELOPMENT_TEAM = JAX8P4BTK4;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "HeartBeats/HeartBeats-Prefix.pch";
 				INFOPLIST_FILE = "HeartBeats/HeartBeats-Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.chroman.${PRODUCT_NAME:rfc1034identifier}";
+				PRODUCT_BUNDLE_IDENTIFIER = com.emagrorrim.HeartBeats;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = app;
 			};

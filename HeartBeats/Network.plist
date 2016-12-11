@@ -2,11 +2,7 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>test_url</key>
-	<string>http://10.29.6.211:3000</string>
-	<key>root_url2</key>
-	<string>http://10.201.132.132:8080</string>
 	<key>root_url</key>
-	<string>http://10.29.4.160:8080</string>
+	<string>http://10.205.20.51:8080</string>
 </dict>
 </plist>
